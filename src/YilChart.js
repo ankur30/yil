@@ -2,7 +2,6 @@ import { Component } from 'react';
 import {
   PieChart,
   Pie,
-  Sector,
   Cell,
   Legend
 } from 'recharts';
@@ -17,37 +16,42 @@ class YilChart extends Component {
     }
   }
 
-  handleData(data){
-    const _arr = [];
-    this.setState({data: data.results});
-    const result = data.results.reduce((acc, d) => {
-    const found = acc.find(a => a.oid === d.oid);
-    const value = { value: d.ptitle};
-    if (!found) {
-        acc.push({oid:d.oid, data: [value]})
-    }
-    else {
-        found.data.push(value)
-    }
-    return acc;
-    }, []);
-    const temp_arr = result.map(function(item){
-      return {'name':item.oid,'value': item.data.length};
-    });
-    const url_org = 'https://mdsa.bipad.gov.np/api/v1/organization';
-
-    fetch(url_org,{
-      method: 'GET',
+  componentDidMount() {
+    const url_proj = 'https://mdsa.bipad.gov.np/api/v1/project';
+    fetch(url_proj,{
+        method: 'GET',
     })
-    .then(res=> res.json())
-    .then(data=>this.createData(data, temp_arr));
-
-    console.log(data.results);
-    console.log(temp_arr);
+    .then(res => res.json())
+    .then(data => this.handleProjData(data.results));
   }
 
-  createData(data,temp_arr) {
-    const result = temp_arr.map(function(item){
+  handleProjData(data){
+    const url_org = 'https://mdsa.bipad.gov.np/api/v1/organization';
+    const repeatedObjs = data.reduce((acc, d) => {
+        const found = acc.find(a => a.oid === d.oid);
+        const value = {value: d.ptitle};
+        if (!found){
+            acc.push({oid:d.oid, data:[value]})
+        }
+        else{
+            found.data.push(value)
+        }
+        return acc;
+    }, []);
+
+    const dataCount = repeatedObjs.map((item) => {
+        return {'name':item.oid,'value':item.data.length};
+    });
+
+    fetch(url_org,{
+        method: 'GET',
+    })
+    .then(res => res.json())
+    .then(orgData => this.createFinalObj(orgData, dataCount));
+  }
+
+  createFinalObj(data,temp_arr) {
+    const result = temp_arr.map((item) => {
       const oid = parseInt(item.name);
       const convdata = [...data.results];
       const name =  convdata.filter(function(entry){
@@ -56,23 +60,11 @@ class YilChart extends Component {
       return {'name':name[0].oname, 'value': item.value };
     });
     this.setState({data: result});
-    console.log(data.results);
-  }
-
-  componentDidMount() {
-    const url_proj = 'https://mdsa.bipad.gov.np/api/v1/project';
-
-    fetch(url_proj,{
-      method: 'GET',
-    })
-    .then(res=> res.json())
-    .then(data=>this.handleData(data));
   }
 
   render() {
     const data = this.state.data;
     return (
-      <div>
       <PieChart width={800} height={400} onMouseEnter={this.onPieEnter}>
         <Pie
           data={data}
@@ -93,8 +85,6 @@ class YilChart extends Component {
         </Pie>
         <Legend verticalAlign="bottom" height={36}/>
       </PieChart>
-
-      </div>
     );
   }
 }

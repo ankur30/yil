@@ -1,14 +1,8 @@
-import logo from './logo.svg';
-import './App.css';
-import YilChart from './YilChart'
-import Example from './Example'
+import YilChart from './YilChart';
 
 function App() {
   return (
-    <div className="App">
-    <YilChart />
-    <Example />
-    </div>
+      <YilChart />
   );
 }
 
