@@ -1,4 +1,5 @@
 import { Component } from 'react';
+import _ from 'lodash';
 import {
   PieChart,
   Pie,
@@ -26,40 +27,25 @@ class YilChart extends Component {
   }
 
   handleProjData(data){
-    const url_org = 'https://mdsa.bipad.gov.np/api/v1/organization';
-    const repeatedObjs = data.reduce((acc, d) => {
-        const found = acc.find(a => a.oid === d.oid);
-        const value = {value: d.ptitle};
-        if (!found){
-            acc.push({oid:d.oid, data:[value]})
-        }
-        else{
-            found.data.push(value)
-        }
-        return acc;
-    }, []);
-
-    const dataCount = repeatedObjs.map((item) => {
-        return {'name':item.oid,'value':item.data.length};
-    });
-
-    fetch(url_org,{
+    const orgCount = _.countBy(data,"oid");
+    const urlOrg = 'https://mdsa.bipad.gov.np/api/v1/organization';
+    fetch(urlOrg,{
         method: 'GET',
     })
     .then(res => res.json())
-    .then(orgData => this.createFinalObj(orgData, dataCount));
+    .then(orgData => this.createChartObj(orgCount, orgData));
   }
 
-  createFinalObj(data,temp_arr) {
-    const result = temp_arr.map((item) => {
-      const oid = parseInt(item.name);
-      const convdata = [...data.results];
-      const name =  convdata.filter(function(entry){
-        return entry.oid === oid;
-      });
-      return {'name':name[0].oname, 'value': item.value };
-    });
-    this.setState({data: result});
+  createChartObj(orgCount, data,temp_arr) {
+     const orgNameOids = _.keys(orgCount);
+     const orgNames = orgNameOids.map((item) => {
+         const convdata = [...data.results];
+         const name =  convdata.filter((entry) => {
+           return  entry.oid === parseInt(item);
+         });
+         return {'name':name[0].oname, 'value': orgCount[item] };
+     });
+    this.setState({data: orgNames});
   }
 
   render() {
